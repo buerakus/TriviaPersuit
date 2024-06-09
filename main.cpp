@@ -4,18 +4,92 @@
 #include <string>
 #include <stdexcept>
 
+// Max users and vertices for the graph
 const int maxUsers = 100;
+const int maxVertices = 100;
 
+// Existing User structure
 struct User {
-    int id = 0; 
+    int id = 0;
     std::string name;
     std::string password;
     int score = 0;
 };
 
+// Graph data structure using adjacency list representation
+class Graph {
+private:
+    struct AdjListNode {
+        int dest;
+        AdjListNode* next;
+    };
+
+    struct AdjList {
+        AdjListNode* head;
+    };
+
+    AdjList* array;
+    std::string vertexNames[maxVertices];
+
+public:
+    Graph() {
+        array = new AdjList[maxVertices];
+        for (int i = 0; i < maxVertices; ++i) {
+            array[i].head = nullptr;
+        }
+    }
+
+    ~Graph() {
+        for (int i = 0; i < maxVertices; ++i) {
+            AdjListNode* node = array[i].head;
+            while (node != nullptr) {
+                AdjListNode* temp = node;
+                node = node->next;
+                delete temp;
+            }
+        }
+        delete[] array;
+    }
+
+    void addVertex(int vertex, const std::string& name) {
+        if (vertex < maxVertices) {
+            // Initialize an empty adjacency list for this vertex
+            array[vertex].head = nullptr;
+            vertexNames[vertex] = name;
+        }
+    }
+
+    void addEdge(int src, int dest) {
+        if (src < maxVertices && dest < maxVertices) {
+            // Add an edge from src to dest
+            AdjListNode* newNode = new AdjListNode{ dest, array[src].head };
+            array[src].head = newNode;
+
+            // Add an edge from dest to src (since undirected graph)
+            newNode = new AdjListNode{ src, array[dest].head };
+            array[dest].head = newNode;
+        }
+    }
+
+    void displayGraph() {
+        for (int i = 0; i < maxVertices; ++i) {
+            if (array[i].head != nullptr) {
+                std::cout << vertexNames[i] << " -> ";
+                AdjListNode* node = array[i].head;
+                while (node != nullptr) {
+                    std::cout << vertexNames[node->dest] << " ";
+                    node = node->next;
+                }
+                std::cout << std::endl;
+            }
+        }
+    }
+};
+
+// Existing UserDatabase class
 class UserDatabase {
 private:
-    User users[maxUsers];
+    User users[maxUsers]; // Arrays
     int lastUserId = 0;
     const std::string filename = "credentials.txt";
 
@@ -34,7 +108,23 @@ public:
     void updateUserScore(const std::string& username, int score);
     void viewScoreboard();
     void viewTopByPoints(int n);
+    void displayTop30BarGraph();
     int getUserRank(const std::string& username);
+
+    // Public getter for lastUserId
+    int getLastUserId() const {
+        return lastUserId;
+    }
+
+    // Public getter for user by ID
+    User getUserById(int id) const {
+        for (int i = 0; i < lastUserId; ++i) {
+            if (users[i].id == id) {
+                return users[i];
+            }
+        }
+        return User{};
+    }
 
 private:
     void loadUsers();
@@ -181,12 +271,33 @@ void UserDatabase::insertionSort(int n) {
     }
 }
 
-void adminLogin(const std::string& username, const std::string& password) {
-    if (username == "admin" && password == "admin") {
-        std::cout << "Welcome admin!" << std::endl;
+void UserDatabase::displayTop30BarGraph() {
+    // Custom container to hold the top 30 users
+    struct TopUser {
+        std::string name;
+        int score;
+    };
+
+    TopUser topUsers[30];
+    int topUserCount = (lastUserId < 30) ? lastUserId : 30;
+
+    // Sort users and store top 30 in custom container
+    bubbleSort();
+    for (int i = 0; i < topUserCount; ++i) {
+        topUsers[i].name = users[i].name;
+        topUsers[i].score = users[i].score;
     }
-    else {
-        std::cout << "Invalid admin credentials!" << std::endl;
+
+    // Display the bar graph
+    int maxScore = topUsers[0].score;
+    std::cout << "\nTop 30 Players Bar Graph:\n";
+    for (int i = 0; i < topUserCount; ++i) {
+        std::cout << i + 1 << ". " << topUsers[i].name << " | ";
+        int barLength = (topUsers[i].score * 50) / maxScore; // Normalize bar length
+        for (int j = 0; j < barLength; ++j) {
+            std::cout << "=";
+        }
+        std::cout << " " << topUsers[i].score << " points\n";
     }
 }
 
@@ -288,7 +399,7 @@ public:
 struct Card {
     std::string question;
     std::string answers[4];
-    int correctAnswer = 0; 
+    int correctAnswer = 0;
 };
 
 class Deck {
@@ -484,12 +595,12 @@ void gameLoop(UserDatabase& database, const std::string& username) {
             }
             catch (const std::out_of_range& e) {
                 std::cerr << "Invalid choice." << std::endl;
-                --i; 
+                --i;
             }
         }
         else {
             std::cout << "Invalid choice." << std::endl;
-            --i; 
+            --i;
         }
     }
 
@@ -537,8 +648,9 @@ void gameLoop(UserDatabase& database, const std::string& username) {
 }
 
 void adminLoop(UserDatabase& database) {
+    Graph userGraph;
     while (true) {
-        std::cout << "Teacher Options:\n1. View Scoreboard\n2. View Top by Points\n3. View All Questions in Answered Deck\n4. Logout\n";
+        std::cout << "Teacher Options:\n1. View Scoreboard\n2. View Top by Points\n3. View All Questions in Answered Deck\n4. Display Top 30 Players Bar Graph\n5. Display User Graph\n6. Logout\n";
         int choice;
         std::cin >> choice;
 
@@ -562,6 +674,20 @@ void adminLoop(UserDatabase& database) {
             break;
         }
         case 4:
+            database.displayTop30BarGraph();
+            break;
+        case 5:
+            // Display user graph
+            for (int i = 1; i <= database.getLastUserId(); ++i) {
+                User user = database.getUserById(i);
+                userGraph.addVertex(i, user.name);
+                if (i > 1) {
+                    userGraph.addEdge(i - 1, i); // Simple example of user connections
+                }
+            }
+            userGraph.displayGraph();
+            break;
+        case 6:
             return;
         default:
             std::cout << "Invalid choice." << std::endl;
@@ -576,12 +702,12 @@ int main() {
 
     while (true) {
         std::cout << "Welcome to the Card Game.\n";
-        std::cout << "Choose option :\n1. Login as Student\n2. Login as Teacher\n3. Register as student\n4. Leave\n";
+        std::cout << "Choose option :\n1. Login as Student\n2. Login as Teacher\n3. Register as Student\n4. Leave\n";
         std::cin >> choice;
 
         switch (choice) {
         case 1:
-            std::cout << "Enter login: ";
+            std::cout << "Enter username: ";
             std::cin >> username;
             std::cout << "Enter password: ";
             std::cin >> password;
@@ -590,9 +716,9 @@ int main() {
             }
             break;
         case 2:
-            std::cout << "Enter login: ";
+            std::cout << "Enter admin username: ";
             std::cin >> username;
-            std::cout << "Enter password: ";
+            std::cout << "Enter admin password: ";
             std::cin >> password;
             if (username == "admin" && password == "admin") {
                 adminLoop(database);
@@ -602,7 +728,7 @@ int main() {
             }
             break;
         case 3:
-            std::cout << "Enter login: ";
+            std::cout << "Enter username: ";
             std::cin >> username;
             std::cout << "Enter password: ";
             std::cin.ignore(); // Clear the newline character left in the input buffer
