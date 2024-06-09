@@ -7,13 +7,12 @@
 const int maxUsers = 100;
 
 struct User {
-    int id;
+    int id = 0; 
     std::string name;
     std::string password;
-    int score;
+    int score = 0;
 };
 
-// Singleton class for User Database
 class UserDatabase {
 private:
     User users[maxUsers];
@@ -33,10 +32,15 @@ public:
     bool registerUser(const std::string& username, const std::string& password);
     bool loginUser(const std::string& username, const std::string& password);
     void updateUserScore(const std::string& username, int score);
+    void viewScoreboard();
+    void viewTopByPoints(int n);
+    int getUserRank(const std::string& username);
 
 private:
     void loadUsers();
     void saveUsers();
+    void bubbleSort();
+    void insertionSort(int n);
 };
 
 bool UserDatabase::registerUser(const std::string& username, const std::string& password) {
@@ -126,6 +130,54 @@ void UserDatabase::saveUsers() {
     }
     else {
         std::cerr << "Failed to open file for writing: " << filename << std::endl;
+    }
+}
+
+void UserDatabase::viewScoreboard() {
+    bubbleSort();
+    for (int i = 0; i < lastUserId; ++i) {
+        std::cout << "Rank " << i + 1 << ": " << users[i].name << " - " << users[i].score << " points" << std::endl;
+    }
+}
+
+void UserDatabase::viewTopByPoints(int n) {
+    insertionSort(n);
+    for (int i = 0; i < n && i < lastUserId; ++i) {
+        std::cout << "Rank " << i + 1 << ": " << users[i].name << " - " << users[i].score << " points" << std::endl;
+    }
+}
+
+int UserDatabase::getUserRank(const std::string& username) {
+    bubbleSort();
+    for (int i = 0; i < lastUserId; ++i) {
+        if (users[i].name == username) {
+            return i + 1;
+        }
+    }
+    return -1;
+}
+
+void UserDatabase::bubbleSort() {
+    for (int i = 0; i < lastUserId - 1; ++i) {
+        for (int j = 0; j < lastUserId - i - 1; ++j) {
+            if (users[j].score < users[j + 1].score) {
+                User temp = users[j];
+                users[j] = users[j + 1];
+                users[j + 1] = temp;
+            }
+        }
+    }
+}
+
+void UserDatabase::insertionSort(int n) {
+    for (int i = 1; i < n && i < lastUserId; ++i) {
+        User key = users[i];
+        int j = i - 1;
+        while (j >= 0 && users[j].score < key.score) {
+            users[j + 1] = users[j];
+            j--;
+        }
+        users[j + 1] = key;
     }
 }
 
@@ -236,7 +288,7 @@ public:
 struct Card {
     std::string question;
     std::string answers[4];
-    int correctAnswer;
+    int correctAnswer = 0; 
 };
 
 class Deck {
@@ -266,29 +318,21 @@ public:
 
     Card drawCard() {
         if (cards.isEmpty()) {
-            throw std::out_of_range("Deck is empty");
+            throw std::out_of_range("No more cards in the deck.");
         }
-        Card topCard = cards.peek();
+        Card card = cards.peek();
         cards.pop();
-        return topCard;
+        return card;
     }
 
     void discardCard(const Card& card) {
         cards.push(card);
     }
 
-    bool isEmpty() const {
-        return cards.isEmpty();
-    }
-
     void displayDiscardedQuestions() {
-        if (cards.isEmpty()) {
-            std::cout << "No discarded questions available." << std::endl;
-            return;
-        }
-
         Stack<Card> tempStack;
         int index = 1;
+
         while (!cards.isEmpty()) {
             Card card = cards.peek();
             std::cout << index << ". " << card.question << std::endl;
@@ -303,23 +347,21 @@ public:
         }
     }
 
-    Card getDiscardedCard(int choice) {
-        if (cards.isEmpty()) {
-            throw std::out_of_range("Deck is empty");
-        }
-
+    Card getDiscardedCard(int index) {
         Stack<Card> tempStack;
         Card selectedCard;
-        int index = 1;
+        int currentIndex = 1;
 
         while (!cards.isEmpty()) {
             Card card = cards.peek();
-            if (index == choice) {
+            if (currentIndex == index) {
                 selectedCard = card;
             }
-            tempStack.push(card);
+            else {
+                tempStack.push(card);
+            }
             cards.pop();
-            index++;
+            currentIndex++;
         }
 
         while (!tempStack.isEmpty()) {
@@ -327,43 +369,38 @@ public:
             tempStack.pop();
         }
 
-        if (index <= choice) {
-            throw std::out_of_range("Invalid choice");
+        if (currentIndex <= index) {
+            throw std::out_of_range("Invalid card index.");
         }
 
         return selectedCard;
     }
 
-    void removeCard(int choice) {
-        if (cards.isEmpty()) {
-            throw std::out_of_range("Deck is empty");
-        }
-
+    void removeCard(int index) {
         Stack<Card> tempStack;
-        int index = 1;
+        int currentIndex = 1;
 
         while (!cards.isEmpty()) {
             Card card = cards.peek();
-            if (index != choice) {
+            if (currentIndex != index) {
                 tempStack.push(card);
             }
             cards.pop();
-            index++;
+            currentIndex++;
         }
 
         while (!tempStack.isEmpty()) {
             cards.push(tempStack.peek());
             tempStack.pop();
         }
+    }
 
-        if (index <= choice) {
-            throw std::out_of_range("Invalid choice");
-        }
+    bool isEmpty() const {
+        return cards.isEmpty();
     }
 };
 
-class Player {
-public:
+struct Player {
     std::string name;
     int score;
     int rounds;
@@ -442,24 +479,23 @@ void gameLoop(UserDatabase& database, const std::string& username) {
                 }
                 else {
                     std::cout << "Wrong!" << std::endl;
-                    discardedDeck.discardCard(card);
+                    discardedDeck.removeCard(questionChoice);
                 }
             }
             catch (const std::out_of_range& e) {
                 std::cerr << "Invalid choice." << std::endl;
-                --i; // Invalid choice, don't count this round
+                --i; 
             }
         }
         else {
             std::cout << "Invalid choice." << std::endl;
-            --i; // Invalid choice, don't count this round
+            --i; 
         }
     }
 
     std::cout << "Game over, your final score: " << player.score << std::endl;
     database.updateUserScore(username, player.score);
 
-    // Save updated decks to files
     std::ofstream unansweredFile("unanswered_deck.txt");
     if (unansweredFile.is_open()) {
         while (!unansweredDeck.isEmpty()) {
@@ -500,13 +536,46 @@ void gameLoop(UserDatabase& database, const std::string& username) {
     }
 }
 
+void adminLoop(UserDatabase& database) {
+    while (true) {
+        std::cout << "Teacher Options:\n1. View Scoreboard\n2. View Top by Points\n3. View All Questions in Answered Deck\n4. Logout\n";
+        int choice;
+        std::cin >> choice;
+
+        switch (choice) {
+        case 1:
+            database.viewScoreboard();
+            break;
+        case 2:
+            int n;
+            std::cout << "Enter number of top students to view (e.g., 30 for top 30): ";
+            std::cin >> n;
+            database.viewTopByPoints(n);
+            break;
+        case 3: {
+            Deck answeredDeck;
+            answeredDeck.loadDeck("answered_deck.txt");
+            while (!answeredDeck.isEmpty()) {
+                Card card = answeredDeck.drawCard();
+                std::cout << card.question << std::endl;
+            }
+            break;
+        }
+        case 4:
+            return;
+        default:
+            std::cout << "Invalid choice." << std::endl;
+        }
+    }
+}
+
 int main() {
     int choice;
     std::string username, password;
     UserDatabase& database = UserDatabase::getInstance();
 
     while (true) {
-        std::cout << "Welcome to the Trivia Pursuit DSTR Ed.\n";
+        std::cout << "Welcome to the Card Game.\n";
         std::cout << "Choose option :\n1. Login as Student\n2. Login as Teacher\n3. Register as student\n4. Leave\n";
         std::cin >> choice;
 
@@ -525,7 +594,12 @@ int main() {
             std::cin >> username;
             std::cout << "Enter password: ";
             std::cin >> password;
-            adminLogin(username, password);
+            if (username == "admin" && password == "admin") {
+                adminLoop(database);
+            }
+            else {
+                std::cout << "Invalid admin credentials!" << std::endl;
+            }
             break;
         case 3:
             std::cout << "Enter login: ";
