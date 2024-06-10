@@ -1,137 +1,67 @@
+#include "UserDatabase.hpp"
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <stdexcept>
 
-// Max users and vertices for the graph
-const int maxUsers = 100;
-const int maxVertices = 100;
+Graph::Graph() {
+    array = new AdjList[maxVertices];
+    for (int i = 0; i < maxVertices; ++i) {
+        array[i].head = nullptr;
+    }
+}
 
-// Existing User structure
-struct User {
-    int id = 0;
-    std::string name;
-    std::string password;
-    int score = 0;
-};
-
-// Graph data structure using adjacency list representation
-class Graph {
-private:
-    struct AdjListNode {
-        int dest;
-        AdjListNode* next;
-    };
-
-    struct AdjList {
-        AdjListNode* head;
-    };
-
-    AdjList* array;
-    std::string vertexNames[maxVertices];
-
-public:
-    Graph() {
-        array = new AdjList[maxVertices];
-        for (int i = 0; i < maxVertices; ++i) {
-            array[i].head = nullptr;
+Graph::~Graph() {
+    for (int i = 0; i < maxVertices; ++i) {
+        AdjListNode* node = array[i].head;
+        while (node != nullptr) {
+            AdjListNode* temp = node;
+            node = node->next;
+            delete temp;
         }
     }
+    delete[] array;
+}
 
-    ~Graph() {
-        for (int i = 0; i < maxVertices; ++i) {
+void Graph::addVertex(int vertex, const std::string& name) {
+    if (vertex < maxVertices) {
+        array[vertex].head = nullptr;
+        vertexNames[vertex] = name;
+    }
+}
+
+void Graph::addEdge(int src, int dest) {
+    if (src < maxVertices && dest < maxVertices) {
+        AdjListNode* newNode = new AdjListNode{ dest, array[src].head };
+        array[src].head = newNode;
+        newNode = new AdjListNode{ src, array[dest].head };
+        array[dest].head = newNode;
+    }
+}
+
+void Graph::displayGraph() {
+    for (int i = 0; i < maxVertices; ++i) {
+        if (array[i].head != nullptr) {
+            std::cout << vertexNames[i] << " -> ";
             AdjListNode* node = array[i].head;
             while (node != nullptr) {
-                AdjListNode* temp = node;
+                std::cout << vertexNames[node->dest] << " ";
                 node = node->next;
-                delete temp;
             }
-        }
-        delete[] array;
-    }
-
-    void addVertex(int vertex, const std::string& name) {
-        if (vertex < maxVertices) {
-            // Initialize an empty adjacency list for this vertex
-            array[vertex].head = nullptr;
-            vertexNames[vertex] = name;
+            std::cout << std::endl;
         }
     }
+}
 
-    void addEdge(int src, int dest) {
-        if (src < maxVertices && dest < maxVertices) {
-            // Add an edge from src to dest
-            AdjListNode* newNode = new AdjListNode{ dest, array[src].head };
-            array[src].head = newNode;
+UserDatabase::UserDatabase() {
+    loadUsers();
+}
 
-            // Add an edge from dest to src (since undirected graph)
-            newNode = new AdjListNode{ src, array[dest].head };
-            array[dest].head = newNode;
-        }
-    }
-
-    void displayGraph() {
-        for (int i = 0; i < maxVertices; ++i) {
-            if (array[i].head != nullptr) {
-                std::cout << vertexNames[i] << " -> ";
-                AdjListNode* node = array[i].head;
-                while (node != nullptr) {
-                    std::cout << vertexNames[node->dest] << " ";
-                    node = node->next;
-                }
-                std::cout << std::endl;
-            }
-        }
-    }
-};
-
-// Existing UserDatabase class
-class UserDatabase {
-private:
-    User users[maxUsers]; // Arrays
-    int lastUserId = 0;
-    const std::string filename = "credentials.txt";
-
-    UserDatabase() {
-        loadUsers();
-    }
-
-public:
-    static UserDatabase& getInstance() {
-        static UserDatabase instance;
-        return instance;
-    }
-
-    bool registerUser(const std::string& username, const std::string& password);
-    bool loginUser(const std::string& username, const std::string& password);
-    void updateUserScore(const std::string& username, int score);
-    void viewScoreboard();
-    void viewTopByPoints(int n);
-    void displayTop30BarGraph();
-    int getUserRank(const std::string& username);
-
-    // Public getter for lastUserId
-    int getLastUserId() const {
-        return lastUserId;
-    }
-
-    // Public getter for user by ID
-    User getUserById(int id) const {
-        for (int i = 0; i < lastUserId; ++i) {
-            if (users[i].id == id) {
-                return users[i];
-            }
-        }
-        return User{};
-    }
-
-private:
-    void loadUsers();
-    void saveUsers();
-    void bubbleSort();
-    void insertionSort(int n);
-};
+UserDatabase& UserDatabase::getInstance() {
+    static UserDatabase instance;
+    return instance;
+}
 
 bool UserDatabase::registerUser(const std::string& username, const std::string& password) {
     if (lastUserId >= maxUsers) {
@@ -247,6 +177,19 @@ int UserDatabase::getUserRank(const std::string& username) {
     return -1;
 }
 
+int UserDatabase::getLastUserId() const {
+    return lastUserId;
+}
+
+User UserDatabase::getUserById(int id) const {
+    for (int i = 0; i < lastUserId; ++i) {
+        if (users[i].id == id) {
+            return users[i];
+        }
+    }
+    return User{};
+}
+
 void UserDatabase::bubbleSort() {
     for (int i = 0; i < lastUserId - 1; ++i) {
         for (int j = 0; j < lastUserId - i - 1; ++j) {
@@ -272,7 +215,6 @@ void UserDatabase::insertionSort(int n) {
 }
 
 void UserDatabase::displayTop30BarGraph() {
-    // Custom container to hold the top 30 users
     struct TopUser {
         std::string name;
         int score;
@@ -281,19 +223,17 @@ void UserDatabase::displayTop30BarGraph() {
     TopUser topUsers[30];
     int topUserCount = (lastUserId < 30) ? lastUserId : 30;
 
-    // Sort users and store top 30 in custom container
     bubbleSort();
     for (int i = 0; i < topUserCount; ++i) {
         topUsers[i].name = users[i].name;
         topUsers[i].score = users[i].score;
     }
 
-    // Display the bar graph
     int maxScore = topUsers[0].score;
     std::cout << "\nTop 30 Players Bar Graph:\n";
     for (int i = 0; i < topUserCount; ++i) {
         std::cout << i + 1 << ". " << topUsers[i].name << " | ";
-        int barLength = (topUsers[i].score * 50) / maxScore; // Normalize bar length
+        int barLength = (topUsers[i].score * 50) / maxScore;
         for (int j = 0; j < barLength; ++j) {
             std::cout << "=";
         }
@@ -302,232 +242,202 @@ void UserDatabase::displayTop30BarGraph() {
 }
 
 template <typename T>
-class Stack {
-private:
-    struct Node {
-        T data;
-        Node* next;
-        Node(T data) : data(data), next(nullptr) {}
-    };
-    Node* top;
-
-public:
-    Stack() : top(nullptr) {}
-
-    ~Stack() {
-        while (!isEmpty()) {
-            pop();
-        }
-    }
-
-    void push(T data) {
-        Node* newNode = new Node(data);
-        newNode->next = top;
-        top = newNode;
-    }
-
-    void pop() {
-        if (!isEmpty()) {
-            Node* temp = top;
-            top = top->next;
-            delete temp;
-        }
-    }
-
-    T peek() const {
-        if (!isEmpty()) {
-            return top->data;
-        }
-        throw std::out_of_range("Stack is empty");
-    }
-
-    bool isEmpty() const {
-        return top == nullptr;
-    }
-};
+Stack<T>::Stack() : top(nullptr) {}
 
 template <typename T>
-class Queue {
-private:
-    struct Node {
-        T data;
-        Node* next;
-        Node(T data) : data(data), next(nullptr) {}
-    };
-    Node* front, * rear;
+Stack<T>::~Stack() {
+    while (!isEmpty()) {
+        pop();
+    }
+}
 
-public:
-    Queue() : front(nullptr), rear(nullptr) {}
+template <typename T>
+void Stack<T>::push(T data) {
+    Node* newNode = new Node(data);
+    newNode->next = top;
+    top = newNode;
+}
 
-    ~Queue() {
-        while (!isEmpty()) {
-            dequeue();
-        }
+template <typename T>
+void Stack<T>::pop() {
+    if (!isEmpty()) {
+        Node* temp = top;
+        top = top->next;
+        delete temp;
+    }
+}
+
+template <typename T>
+T Stack<T>::peek() const {
+    if (!isEmpty()) {
+        return top->data;
+    }
+    throw std::out_of_range("Stack is empty");
+}
+
+template <typename T>
+bool Stack<T>::isEmpty() const {
+    return top == nullptr;
+}
+
+template <typename T>
+Queue<T>::Queue() : front(nullptr), rear(nullptr) {}
+
+template <typename T>
+Queue<T>::~Queue() {
+    while (!isEmpty()) {
+        dequeue();
+    }
+}
+
+template <typename T>
+void Queue<T>::enqueue(T data) {
+    Node* newNode = new Node(data);
+    if (isEmpty()) {
+        front = rear = newNode;
+    }
+    else {
+        rear->next = newNode;
+        rear = newNode;
+    }
+}
+
+template <typename T>
+void Queue<T>::dequeue() {
+    if (!isEmpty()) {
+        Node* temp = front;
+        front = front->next;
+        delete temp;
+    }
+}
+
+template <typename T>
+T Queue<T>::peek() const {
+    if (!isEmpty()) {
+        return front->data;
+    }
+    throw std::out_of_range("Queue is empty");
+}
+
+template <typename T>
+bool Queue<T>::isEmpty() const {
+    return front == nullptr;
+}
+
+Player::Player(const std::string& name) : name(name), score(0), rounds(3) {}
+
+void Player::answerQuestion(const Card& card, int answer) {
+    if (answer == card.correctAnswer) {
+        score += 100;
+    }
+}
+
+void Player::discardQuestion() {
+    score += 80;
+}
+
+void Deck::loadDeck(const std::string& filename) {
+    std::ifstream file(filename);
+    if (!file) {
+        std::cerr << "Failed to open file: " << filename << std::endl;
+        return;
     }
 
-    void enqueue(T data) {
-        Node* newNode = new Node(data);
-        if (isEmpty()) {
-            front = rear = newNode;
+    std::string line;
+    while (std::getline(file, line)) {
+        Card card;
+        std::stringstream ss(line);
+        std::getline(ss, card.question, '|');
+        for (int i = 0; i < 4; ++i) {
+            std::getline(ss, card.answers[i], '|');
         }
-        else {
-            rear->next = newNode;
-            rear = newNode;
-        }
-    }
-
-    void dequeue() {
-        if (!isEmpty()) {
-            Node* temp = front;
-            front = front->next;
-            delete temp;
-        }
-    }
-
-    T peek() const {
-        if (!isEmpty()) {
-            return front->data;
-        }
-        throw std::out_of_range("Queue is empty");
-    }
-
-    bool isEmpty() const {
-        return front == nullptr;
-    }
-};
-
-struct Card {
-    std::string question;
-    std::string answers[4];
-    int correctAnswer = 0;
-};
-
-class Deck {
-private:
-    Stack<Card> cards;
-
-public:
-    void loadDeck(const std::string& filename) {
-        std::ifstream file(filename);
-        if (!file) {
-            std::cerr << "Failed to open file: " << filename << std::endl;
-            return;
-        }
-
-        std::string line;
-        while (std::getline(file, line)) {
-            Card card;
-            std::stringstream ss(line);
-            std::getline(ss, card.question, '|');
-            for (int i = 0; i < 4; ++i) {
-                std::getline(ss, card.answers[i], '|');
-            }
-            ss >> card.correctAnswer;
-            cards.push(card);
-        }
-    }
-
-    Card drawCard() {
-        if (cards.isEmpty()) {
-            throw std::out_of_range("No more cards in the deck.");
-        }
-        Card card = cards.peek();
-        cards.pop();
-        return card;
-    }
-
-    void discardCard(const Card& card) {
+        ss >> card.correctAnswer;
         cards.push(card);
     }
+}
 
-    void displayDiscardedQuestions() {
-        Stack<Card> tempStack;
-        int index = 1;
+Card Deck::drawCard() {
+    if (cards.isEmpty()) {
+        throw std::out_of_range("No more cards in the deck.");
+    }
+    Card card = cards.peek();
+    cards.pop();
+    return card;
+}
 
-        while (!cards.isEmpty()) {
-            Card card = cards.peek();
-            std::cout << index << ". " << card.question << std::endl;
+void Deck::discardCard(const Card& card) {
+    cards.push(card);
+}
+
+void Deck::displayDiscardedQuestions() {
+    Stack<Card> tempStack;
+    int index = 1;
+
+    while (!cards.isEmpty()) {
+        Card card = cards.peek();
+        std::cout << index << ". " << card.question << std::endl;
+        tempStack.push(card);
+        cards.pop();
+        index++;
+    }
+
+    while (!tempStack.isEmpty()) {
+        cards.push(tempStack.peek());
+        tempStack.pop();
+    }
+}
+
+Card Deck::getDiscardedCard(int index) {
+    Stack<Card> tempStack;
+    Card selectedCard;
+    int currentIndex = 1;
+
+    while (!cards.isEmpty()) {
+        Card card = cards.peek();
+        if (currentIndex == index) {
+            selectedCard = card;
+        }
+        else {
             tempStack.push(card);
-            cards.pop();
-            index++;
         }
-
-        while (!tempStack.isEmpty()) {
-            cards.push(tempStack.peek());
-            tempStack.pop();
-        }
+        cards.pop();
+        currentIndex++;
     }
 
-    Card getDiscardedCard(int index) {
-        Stack<Card> tempStack;
-        Card selectedCard;
-        int currentIndex = 1;
-
-        while (!cards.isEmpty()) {
-            Card card = cards.peek();
-            if (currentIndex == index) {
-                selectedCard = card;
-            }
-            else {
-                tempStack.push(card);
-            }
-            cards.pop();
-            currentIndex++;
-        }
-
-        while (!tempStack.isEmpty()) {
-            cards.push(tempStack.peek());
-            tempStack.pop();
-        }
-
-        if (currentIndex <= index) {
-            throw std::out_of_range("Invalid card index.");
-        }
-
-        return selectedCard;
+    while (!tempStack.isEmpty()) {
+        cards.push(tempStack.peek());
+        tempStack.pop();
     }
 
-    void removeCard(int index) {
-        Stack<Card> tempStack;
-        int currentIndex = 1;
+    if (currentIndex <= index) {
+        throw std::out_of_range("Invalid card index.");
+    }
 
-        while (!cards.isEmpty()) {
-            Card card = cards.peek();
-            if (currentIndex != index) {
-                tempStack.push(card);
-            }
-            cards.pop();
-            currentIndex++;
+    return selectedCard;
+}
+
+void Deck::removeCard(int index) {
+    Stack<Card> tempStack;
+    int currentIndex = 1;
+
+    while (!cards.isEmpty()) {
+        Card card = cards.peek();
+        if (currentIndex != index) {
+            tempStack.push(card);
         }
-
-        while (!tempStack.isEmpty()) {
-            cards.push(tempStack.peek());
-            tempStack.pop();
-        }
+        cards.pop();
+        currentIndex++;
     }
 
-    bool isEmpty() const {
-        return cards.isEmpty();
+    while (!tempStack.isEmpty()) {
+        cards.push(tempStack.peek());
+        tempStack.pop();
     }
-};
+}
 
-struct Player {
-    std::string name;
-    int score;
-    int rounds;
-
-    Player(const std::string& name) : name(name), score(0), rounds(3) {}
-
-    void answerQuestion(const Card& card, int answer) {
-        if (answer == card.correctAnswer) {
-            score += 100;
-        }
-    }
-
-    void discardQuestion() {
-        score += 80;
-    }
-};
+bool Deck::isEmpty() const {
+    return cards.isEmpty();
+}
 
 void gameLoop(UserDatabase& database, const std::string& username) {
     Deck unansweredDeck, answeredDeck, discardedDeck;
@@ -677,12 +587,11 @@ void adminLoop(UserDatabase& database) {
             database.displayTop30BarGraph();
             break;
         case 5:
-            // Display user graph
             for (int i = 1; i <= database.getLastUserId(); ++i) {
                 User user = database.getUserById(i);
                 userGraph.addVertex(i, user.name);
                 if (i > 1) {
-                    userGraph.addEdge(i - 1, i); // Simple example of user connections
+                    userGraph.addEdge(i - 1, i);
                 }
             }
             userGraph.displayGraph();
@@ -731,7 +640,7 @@ int main() {
             std::cout << "Enter username: ";
             std::cin >> username;
             std::cout << "Enter password: ";
-            std::cin.ignore(); // Clear the newline character left in the input buffer
+            std::cin.ignore();
             std::getline(std::cin, password);
             database.registerUser(username, password);
             break;
