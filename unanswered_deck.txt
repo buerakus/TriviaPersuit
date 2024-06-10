@@ -1,1 +1,30 @@
-
+What programming language is commonly used for creating web pages?|Java|Python|HTML|C++|2
+What is the process of translating source code from a high-level language into machine code called?|Compilation|Interpretation|Translation|Obfuscation|0
+What symbol is commonly used to denote comments in most programming languages?|#|&|//|*|2
+What does the acronym "HTTP" stand for in web development?|Hypertext Transfer Protocol|High Tech Programming|Hyperlink Text Transfer Process|HTML Transfer Protocol|0
+What data structure is commonly used to organize data in key-value pairs?|List|Array|Dictionary|Set|2
+In what format are dates and times usually represented in most programming languages?|UNIX Timestamp|ISO 8601|MM/DD/YYYY|HH:MM|1
+What is the process of checking code for errors before its execution called?|Debugging|Testing|Analysis|Compilation|0
+Which function is used to output text to the screen in the Python programming language?|print()|display()|show()|write()|0
+What operator is used to perform conditional operations in most programming languages?|if|loop|switch|goto|0
+What is "API" in the context of software development?|Application Programming Interface|Automated Program Installation|Advanced Programming Instruction|Automated Protocol Integration|0
+What data structure is used to represent hierarchical relationships as a tree?|List|Tree|Array|Dictionary|1
+What programming language is often used for creating mobile applications?|C#|Java|Python|Swift|3
+What does "SQL" stand for in the context of databases?|Structured Query Language|Simple Query Language|Standard Question Language|Software Query Logic|0
+What is the process of combining different versions of code into one common version called?|Merge|Combine|Aggregate|Sync|0
+Which symbol is used in most programming languages to denote the assignment operation?|=|+:|->|=>|0
+What is "IDE" in the context of software development?|Integrated Development Environment|Interactive Development Engine|Intelligent Design Environment|Integrated Debugging Engine|0
+What is the process of converting data from one type to another in a programming language called?|Casting|Transformation|Conversion|Formatting|0
+What data type is commonly used to store integers without a decimal part?|int|float|string|bool|0
+What is "MVC" in web development?|Model-View-Controller|Main-View-Container|Multiple-Variable-Configuration|Most-Visited-Content|0
+What data structure is commonly used to store elements in a Last-In-First-Out manner?|Stack|Queue|Array|List|0
+What operator is used to perform iterative operations in most programming languages?|for|if|while|loop|2
+What is "URL" in web development?|Uniform Resource Locator|Universal Reference Link|Unified Resource Locator|Uniform Reference Link|0
+What is the markup language used to create content for web pages?|HTML|CSS|JavaScript|Python|0
+What data type is commonly used to store floating-point numbers?|float|int|string|bool|0
+What does "JSON" stand for in the context of data interchange over a network?|JavaScript Object Notation|Java System Output Notification|JavaScript Output Networking|Java System Object Naming|0
+What operator is used to define conditions in most programming languages?|if|case|when|check|0
+What is "OOP" in programming?|Object-Oriented Programming|Ordered Operation Process|Original Object Protocol|Optimized Output Processing|0
+What data structure represents a collection of ordered elements?|Array|List|Queue|Set|0
+Which symbol is commonly used in most programming languages to denote the division operation?|/|*|-|+|0
+What is "git" in software development?|Version Control System|Programming Language|Development Interface|Function Library|0
