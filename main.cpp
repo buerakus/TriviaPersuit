@@ -64,6 +64,21 @@ void UserDatabase::BST::inOrderAll(BSTNode* node) {
     }
 }
 
+void UserDatabase::BST::viewUsersAboveThreshold(int threshold) {
+    int count = 0;
+    viewUsersAboveThreshold(root, threshold, count);
+}
+
+void UserDatabase::BST::viewUsersAboveThreshold(BSTNode* node, int threshold, int& count) {
+    if (node) {
+        viewUsersAboveThreshold(node->right, threshold, count);
+        if (node->user.score > threshold) {
+            std::cout << "User: " << node->user.name << " - " << node->user.score << " points" << std::endl;
+            count++;
+        }
+        viewUsersAboveThreshold(node->left, threshold, count);
+    }
+}
 
 Graph::Graph() {
     array = new AdjList[maxVertices];
@@ -144,6 +159,7 @@ bool UserDatabase::registerUser(const std::string& username, const std::string& 
     newUser.score = 0;
 
     users[lastUserId - 1] = newUser;
+    userBST.insert(newUser);
     saveUsers();
 
     std::cout << "Successfully registered as student!" << std::endl;
@@ -194,6 +210,7 @@ void UserDatabase::loadUsers() {
 
             if (user.id <= maxUsers) {
                 users[user.id - 1] = user;
+                userBST.insert(user);
             }
         }
         file.close();
@@ -299,6 +316,10 @@ void UserDatabase::displayTop30BarGraph() {
         }
         std::cout << " " << topUsers[i].score << " points\n";
     }
+}
+
+void UserDatabase::viewUsersAboveThreshold(int threshold) {
+    userBST.viewUsersAboveThreshold(threshold);
 }
 
 template <typename T>
@@ -620,7 +641,7 @@ void gameLoop(UserDatabase& database, const std::string& username) {
 void adminLoop(UserDatabase& database) {
     Graph userGraph;
     while (true) {
-        std::cout << "Teacher Options:\n1. View Scoreboard\n2. View Top by Points\n3. View All Questions in Answered Deck\n4. Display Top 30 Players Bar Graph\n5. Display User Graph\n6. Logout\n";
+        std::cout << "Teacher Options:\n1. View Scoreboard\n2. View Top by Points\n3. View All Questions in Answered Deck\n4. Display Top 30 Players Bar Graph\n5. Display User Graph\n6. View Users Above Threshold\n7. Logout\n";
         int choice;
         std::cin >> choice;
 
@@ -662,7 +683,15 @@ void adminLoop(UserDatabase& database) {
             }
             userGraph.displayGraph();
             break;
-        case 6:
+        case 6: {
+            int threshold;
+            std::cout << "Enter score threshold: ";
+            std::cin >> threshold;
+            std::cout << "Users with score above " << threshold << ":" << std::endl;
+            database.viewUsersAboveThreshold(threshold);
+            break;
+        }
+        case 7:
             return;
         default:
             std::cout << "Invalid choice." << std::endl;
