@@ -65,7 +65,7 @@ private:
         void insert(BSTNode*& node, const User& user);
         void inOrder(BSTNode* node, int n, int& count);
         void inOrderAll(BSTNode* node);
-        void viewUsersAboveThreshold(int threshold);
+        void viewUsersAboveThreshold(BSTNode* node, int threshold, int& count);
 
     public:
         BST();
@@ -74,6 +74,7 @@ private:
         void inOrder(int n);
         void inOrderAll();
         void clear(BSTNode* node);
+        void viewUsersAboveThreshold(int threshold);
     };
 
     BST userBST;
@@ -86,6 +87,7 @@ public:
     void viewScoreboard();
     void viewTopByPoints(int n);
     void displayTop30BarGraph();
+    void viewUsersAboveThreshold(int threshold);
     int getUserRank(const std::string& username);
     int getLastUserId() const;
     User getUserById(int id) const;
