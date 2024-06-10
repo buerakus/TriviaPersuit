@@ -5,6 +5,66 @@
 #include <string>
 #include <stdexcept>
 
+// BST Methods
+UserDatabase::BST::BST() : root(nullptr) {}
+
+UserDatabase::BST::~BST() {
+    clear(root);
+}
+
+void UserDatabase::BST::clear(BSTNode* node) {
+    if (node) {
+        clear(node->left);
+        clear(node->right);
+        delete node;
+    }
+}
+
+void UserDatabase::BST::insert(const User& user) {
+    insert(root, user);
+}
+
+void UserDatabase::BST::insert(BSTNode*& node, const User& user) {
+    if (!node) {
+        node = new BSTNode(user);
+    }
+    else if (user.score < node->user.score) {
+        insert(node->left, user);
+    }
+    else {
+        insert(node->right, user);
+    }
+}
+
+void UserDatabase::BST::inOrder(int n) {
+    int count = 0;
+    inOrder(root, n, count);
+}
+
+void UserDatabase::BST::inOrder(BSTNode* node, int n, int& count) {
+    if (node && count < n) {
+        inOrder(node->right, n, count);
+        if (count < n) {
+            std::cout << "Rank " << count + 1 << ": " << node->user.name << " - " << node->user.score << " points" << std::endl;
+            count++;
+        }
+        inOrder(node->left, n, count);
+    }
+}
+
+void UserDatabase::BST::inOrderAll() {
+    inOrderAll(root);
+}
+
+void UserDatabase::BST::inOrderAll(BSTNode* node) {
+    if (node) {
+        inOrderAll(node->right);
+        std::cout << "User: " << node->user.name << " - " << node->user.score << " points" << std::endl;
+        inOrderAll(node->left);
+    }
+}
+
+
 Graph::Graph() {
     array = new AdjList[maxVertices];
     for (int i = 0; i < maxVertices; ++i) {
@@ -566,17 +626,21 @@ void adminLoop(UserDatabase& database) {
 
         switch (choice) {
         case 1:
-            database.viewScoreboard();
+            std::cout << "Scoreboard:" << std::endl;
+            database.viewScoreboard();  // Uses BST to view all users sorted by score
             break;
-        case 2:
+        case 2: {
             int n;
             std::cout << "Enter number of top students to view (e.g., 30 for top 30): ";
             std::cin >> n;
-            database.viewTopByPoints(n);
+            std::cout << "Top " << n << " Students by Points:" << std::endl;
+            database.viewTopByPoints(n);  // Uses BST to view top n users by score
             break;
+        }
         case 3: {
             Deck answeredDeck;
             answeredDeck.loadDeck("answered_deck.txt");
+            std::cout << "All Questions in Answered Deck:" << std::endl;
             while (!answeredDeck.isEmpty()) {
                 Card card = answeredDeck.drawCard();
                 std::cout << card.question << std::endl;
@@ -584,9 +648,11 @@ void adminLoop(UserDatabase& database) {
             break;
         }
         case 4:
+            std::cout << "Top 30 Players Bar Graph:" << std::endl;
             database.displayTop30BarGraph();
             break;
         case 5:
+            std::cout << "User Graph:" << std::endl;
             for (int i = 1; i <= database.getLastUserId(); ++i) {
                 User user = database.getUserById(i);
                 userGraph.addVertex(i, user.name);
