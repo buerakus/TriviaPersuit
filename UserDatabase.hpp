@@ -50,6 +50,34 @@ private:
     void bubbleSort();
     void insertionSort(int n);
 
+    class BSTNode {
+    public:
+        User user;
+        BSTNode* left;
+        BSTNode* right;
+        BSTNode(const User& user) : user(user), left(nullptr), right(nullptr) {}
+    };
+
+    class BST {
+    private:
+        BSTNode* root;
+
+        void insert(BSTNode*& node, const User& user);
+        void inOrder(BSTNode* node, int n, int& count);
+        void inOrderAll(BSTNode* node);
+        void viewUsersAboveThreshold(int threshold);
+
+    public:
+        BST();
+        ~BST();
+        void insert(const User& user);
+        void inOrder(int n);
+        void inOrderAll();
+        void clear(BSTNode* node);
+    };
+
+    BST userBST;
+
 public:
     static UserDatabase& getInstance();
     bool registerUser(const std::string& username, const std::string& password);
@@ -134,4 +162,3 @@ void gameLoop(UserDatabase& database, const std::string& username);
 void adminLoop(UserDatabase& database);
 
 #endif // USERDATABASE_HPP
-
